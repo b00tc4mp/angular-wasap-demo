@@ -1,0 +1,130 @@
+<html ng-app="app">
+<head>
+<meta charset="utf-8">
+<title>"whatsapp" angular app for learning ;)</title>
+<link href='http://fonts.googleapis.com/css?family=Lobster' rel='stylesheet' type='text/css'>
+<style>
+* {
+	font-family: 'Lobster', cursive;
+	font-size: 20px
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.js"></script>
+<script type="text/ng-template" id="wasap.html">
+	<table style="background-color: limegreen;">
+		<tr>
+			<td>W4S4P - {{ me }}
+		</tr>
+		</tr>
+		<tr>
+			<td><select ng-model="wasap.selectedContact" ng-options="contact.name for contact in wasap.contacts" ng-change="wasap.onContactSelected()"></select><span style="color: red">{{ wasap.newMessageFromOther }}</span></td>
+			</td>
+		</tr>
+		<tr>
+			<td><textarea ng-show="wasap.contact.id" ng-model="wasap.chat" disabled="disabled" rows="10"></textarea></td>
+		</tr>
+		<tr>
+			<td><textarea ng-show="wasap.contact.id" ng-model="wasap.message"></textarea></td>
+		</tr>
+		<tr>
+			<td><button ng-show="wasap.message" ng-click="wasap.sendMessage()">send</button></td>
+		</tr>
+	</table>
+</script>
+<script language="javascript">
+var app = angular.module('app', []);
+app.run([ '$rootScope', function($rootScope) {
+	$rootScope.$on('broadcast', function(event, target, param) {
+		$rootScope.$broadcast(target, param);
+	});
+} ]);
+app.directive('wasap', function() {
+	return {
+		restrict : 'E',
+		templateUrl : 'wasap.html',
+		replace : true,
+		scope : {
+			me : '@',
+			friends : '@'
+		},
+		controller : [ '$scope', function($scope) {
+			var self = this;
+			self.chat = '';
+			self.message = '';
+			self.newMessageFromOther = '';
+			self.contact = '';
+			var contacts = $scope.friends.split(',');
+			self.chats = {};
+			self.contacts = [];
+			self.selectedContact = {
+				id : '',
+				name : ''
+			};
+			self.contacts.push(self.selectedContact);
+			for ( var i = 0; i < contacts.length; i++) {
+				self.chats[contacts[i]] = '';
+				self.contacts.push({
+					id : contacts[i],
+					name : contacts[i]
+				});
+			}
+			self.onContactSelected = function() {
+				self.contact = self.selectedContact;
+				self.chat = self.chats[self.contact.id];
+				self.contact.name = self.contact.id;
+				self.newMessageFromOther = '';
+			}
+			self.sendMessage = function() {
+				if (self.contact) {
+					self.chats[self.contact.id] += '\nme: ' + self.message;
+					self.chat = self.chats[self.contact.id];
+					$scope.$emit('broadcast', 'wasap.sends', {
+						from : $scope.me,
+						to : self.contact.id,
+						message : self.message
+					});
+					self.message = '';
+				}
+			};
+			$scope.$on('wasap.sends', function(event, param) {
+				if (param.to === $scope.me) {
+					var contact = self.getContactById(param.from);
+					if (contact) {
+						self.chats[contact.id] += '\n' + contact.name + ': ' + param.message;
+						if (self.contact.id === contact.id) {
+							self.chat = self.chats[self.contact.id];
+						} else {
+							contact.name = contact.id + '*';
+							self.newMessageFromOther = '*';
+						}
+					}
+				}
+			});
+			self.getContactById = function(id) {
+				for ( var i = 0; i < self.contacts.length; i++) {
+					var contact = self.contacts[i];
+					if (contact.id === id) {
+						return contact;
+					}
+				}
+			};
+		} ],
+		controllerAs: 'wasap'
+	};
+});
+</script>
+</head>
+<body>
+	<center>
+		<table>
+			<tr>
+				<td><wasap me="manuel" friends="miley,sarah,jessica,jennifer"></wasap></td>
+				<td><wasap me="miley" friends="manuel,sarah,jessica,jennifer"></wasap></td>
+				<td><wasap me="sarah" friends="manuel,miley,jessica,jennifer"></wasap></td>
+				<td><wasap me="jessica" friends="manuel,miley,sarah,jennifer"></wasap></td>
+				<td><wasap me="jennifer" friends="manuel,miley,jessica,sarah"></wasap></td>
+			</tr>
+		</table>
+	</center>
+</body>
+</html>
