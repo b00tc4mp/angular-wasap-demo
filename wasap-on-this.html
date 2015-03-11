@@ -34,7 +34,7 @@
 <script language="javascript">
 var app = angular.module('app', []);
 app.run([ '$rootScope', function($rootScope) {
-	$rootScope.$on('broadcast', function(event, target, param) {
+	$rootScope.$on('antenna', function(event, target, param) {
 		$rootScope.$broadcast(target, param);
 	});
 } ]);
@@ -78,7 +78,7 @@ app.directive('wasap', function() {
 				if (self.contact) {
 					self.chats[self.contact.id] += '\nme: ' + self.message;
 					self.chat = self.chats[self.contact.id];
-					$scope.$emit('broadcast', 'wasap.sends', {
+					$scope.$emit('antenna', 'wasap', {
 						from : $scope.me,
 						to : self.contact.id,
 						message : self.message
@@ -86,7 +86,7 @@ app.directive('wasap', function() {
 					self.message = '';
 				}
 			};
-			$scope.$on('wasap.sends', function(event, param) {
+			$scope.$on('wasap', function(event, param) {
 				if (param.to === $scope.me) {
 					var contact = self.getContactById(param.from);
 					if (contact) {
